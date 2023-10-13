@@ -25,8 +25,6 @@ def openImage(imgPath):
     try:
         if os.path.exists(imgPath): #if the image path exists correctly
             img = Image.open(imgPath)
-            textHidden = textHide()
-            print(textHidden)
         else:
             print("Error: The specified path is incorrect. The file does not exist.")
     except Exception as e:
@@ -50,6 +48,10 @@ def textHide():
 def main():
     imgPath = str(input("Please enter the path of the image: "))
     img = openImage(imgPath)
+    if img:
+        textHidden = textHide()
+        print(textHidden)
+
 
 
 if __name__ == "__main__":
