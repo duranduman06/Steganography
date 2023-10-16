@@ -15,6 +15,7 @@ Algorithm to retrieve text message:-
     Step 1: Read the stego image.
     Step 2: Calculate LSB of each pixels of stego image.
     Step 3: Retrieve bits and convert each 8 bit into character.
+    
 """
 from PIL import Image
 import os
@@ -55,8 +56,30 @@ def calculate_LSB(image,txt):
             pixel = image.getpixel((x, y))  # Get the pixel at (x, y)
             lsb = [pixel[c] & 1 for c in range(3)]  # Calculate LSB for each channel (R, G, B)
             lsb_values.append(lsb)
-
+    if len(binary_text) > total_pixels * 3:
+        print("Text too long to be hidden in the image.")
+    else:
+        binary_index = 0  # Initialize an index for the binary message
+        for y in range(height):
+            for x in range(width):
+                if binary_index < len(binary_text):  # Check if there are more bits to hide
+                    pixel = list(image.getpixel((x, y))[:3])  # Get the pixel at (x, y) and extract the RGB channels
+                    for c in range(3):  # Loop through R, G, B channels
+                        if binary_index < len(binary_text):  # Check if there are more bits to hide
+                            pixel[c] = (pixel[c] & 254) | int(binary_text[binary_index])
+                            binary_index += 1
+                    image.putpixel((x, y), tuple(pixel))  # Update the pixel in the image
+                else:
+                    break
+    return image
     return lsb_values
+def save_stego_image(image, filename):
+    try:
+        image.save(filename)
+        print(f"Stego image saved as {filename}")
+    except Exception as e:
+        print(f"Error: {e}")
+        print("An error occurred while trying to save the stego image.")
 
 
 def main():
@@ -66,7 +89,8 @@ def main():
         txt = str(input("Please enter your text that you want to hide: "))
         lsb_values = calculate_LSB(img,txt)
         # it represents the total number of bits available for hiding data in the image.
-        print(len(lsb_values)//8)
+
+       save_image = save_stego_image(image, "stego_image.png")  # Save the stego image
 
         """" 
         # Print LSB values (for the first 10 pixels)
