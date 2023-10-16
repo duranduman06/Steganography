@@ -56,6 +56,7 @@ def calculate_LSB(image,txt):
             pixel = image.getpixel((x, y))  # Get the pixel at (x, y)
             lsb = [pixel[c] & 1 for c in range(3)]  # Calculate LSB for each channel (R, G, B)
             lsb_values.append(lsb)
+
     if len(binary_text) > total_pixels * 3:
         print("Text too long to be hidden in the image.")
     else:
@@ -72,7 +73,7 @@ def calculate_LSB(image,txt):
                 else:
                     break
     return image
-    return lsb_values
+
 def save_stego_image(image, filename):
     try:
         image.save(filename)
@@ -89,14 +90,8 @@ def main():
         txt = str(input("Please enter your text that you want to hide: "))
         lsb_values = calculate_LSB(img,txt)
         # it represents the total number of bits available for hiding data in the image.
+        save_image = save_stego_image(img, "stego_image.png")  # Save the stego image
 
-       save_image = save_stego_image(image, "stego_image.png")  # Save the stego image
-
-        """" 
-        # Print LSB values (for the first 10 pixels)
-        for i, lsb in enumerate(lsb_values[:10]):
-            print(f"Pixel {i + 1}: R={lsb[0]}, G={lsb[1]}, B={lsb[2]}")
-        """
 
 
 
