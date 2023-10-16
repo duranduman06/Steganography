@@ -1,5 +1,6 @@
 from PIL import Image
 import sys
+import numpy as np
 """
 A. Lsb Based Steganography
 
@@ -33,24 +34,45 @@ def openImage(imgPath):
 
     return img  # Return the img variable
 
-def textHide():
-    txt = str(input("Please enter your text that you want to hide: "))
+
+def calculate_LSB(image,txt):
 
     # Convert text message into binary
-    binary_text = ''.join(format(ord(char), '08b') for char in txt) #binary_text is a string
+    binary_text = ''.join(format(ord(char), '08b') for char in txt)  # binary_text is a string
 
     # Split binary text into 8-bit segments and store in a list
     binary_list = [binary_text[i:i + 8] for i in range(0, len(binary_text), 8)]
     print("Binary representation of the text:", binary_list)
 
-    return txt # Return the txt variable
+    lsb_values = []  # Initialize an empty list to store LSB values
+
+    width, height = image.size
+    array = np.array(list(image.getdata()))
+    total_pixels = array.size // 3 #RGB
+
+    for y in range(height):
+        for x in range(width):
+            pixel = image.getpixel((x, y))  # Get the pixel at (x, y)
+            lsb = [pixel[c] & 1 for c in range(3)]  # Calculate LSB for each channel (R, G, B)
+            lsb_values.append(lsb)
+
+    return lsb_values
+
 
 def main():
     imgPath = str(input("Please enter the path of the image: "))
     img = openImage(imgPath)
     if img:
-        textHidden = textHide()
-        print(textHidden)
+        txt = str(input("Please enter your text that you want to hide: "))
+        lsb_values = calculate_LSB(img,txt)
+        # it represents the total number of bits available for hiding data in the image.
+        print(len(lsb_values)//8)
+
+        """" 
+        # Print LSB values (for the first 10 pixels)
+        for i, lsb in enumerate(lsb_values[:10]):
+            print(f"Pixel {i + 1}: R={lsb[0]}, G={lsb[1]}, B={lsb[2]}")
+        """
 
 
 
