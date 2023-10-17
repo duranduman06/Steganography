@@ -108,6 +108,7 @@ def decode_LSB(image, key):
                         current_binary = ""
                         binary_index += 1
     decoded_message = "".join(chr(int(binary_text[i:i + 8], 2)) for i in range(0, len(binary_text), 8))
+    decoded_message = decoded_message.replace(key, "")  # Remove the key from the decoded message
     return decoded_message
 
 # C:\Users\DELL\Desktop\Steganography\Steno\Steganography\img.png
