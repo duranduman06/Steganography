@@ -26,7 +26,7 @@ def openImage(imgPath):
     img = None  # Initialize img as None
     try:
         if os.path.exists(imgPath): #if the image path exists correctly
-            img = Image.open(imgPath)
+            img = Image.open(imgPath,"r")
         else:
             print("Error: The specified path is incorrect. The file does not exist.")
     except Exception as e:
@@ -46,7 +46,7 @@ def calculate_LSB(image,txt):
     print("Binary representation of the text as List:", binary_list)
 
 
-
+    image = image.convert("RGB")
     width, height = image.size
     array = np.array(list(image.getdata()))
     total_pixels = array.size // 3 #RGB
@@ -91,45 +91,45 @@ def save_stego_image(image, filename):
 def decode_LSB(image, key):
     width, height = image.size
     binary_text = ""
+    binary_index = 0
+    current_binary = ""
 
     for y in range(height):
         for x in range(width):
-            pixel = list(image.getpixel((x, y))[:3])
-            lsb = pixel[2] & 1  # Örnek olarak mavi (B) kanalı kullanılıyor
+            if binary_index < 8:  # Assuming each character is 8 bits
+                pixel = list(image.getpixel((x, y))[:3])
+                for color_channel in range(3):
+                    current_binary += str(pixel[color_channel] & 1)
+                    if len(current_binary) == 8:
+                        if current_binary.endswith(key):
+                            return binary_text
 
-            binary_text += str(lsb)
+                        binary_text += current_binary
+                        current_binary = ""
+                        binary_index += 1
+    decoded_message = "".join(chr(int(binary_text[i:i + 8], 2)) for i in range(0, len(binary_text), 8))
+    return decoded_message
 
-            if binary_text.endswith(key):
-                binary_text = binary_text[:-len(key)]  # Anahtar kelimenin son karakterlerini kaldırın
-                break
-
-    return binary_text
+# C:\Users\DELL\Desktop\Steganography\Steno\Steganography\img.png
 
 def main():
     imgPath = str(input("Please enter the path of the image: "))
     img = openImage(imgPath)
     if img:
-
         print("1: Encode")
         print("2: Decode")
-        whoswho = str(input("Please Select a function: "))
+        whoswho = str(input("Please Select a function (1 or 2): "))
         if whoswho == '1':
             txt = str(input("Please enter your text that you want to hide: ") + "L$B")
-            encode_name = str(input("Please enter a file name (ex: image.jpg): "))
-            lsb_values = calculate_LSB(img,txt)
+            encode_name = str(input("Please enter a file name (ex: image.png): "))
+            img = calculate_LSB(img,txt)
             save_image = save_stego_image(img, encode_name)  # Save the stego image
 
         elif whoswho == '2':
-            binary_text = decode_LSB(img , "L$B")
-            decoded_message = "".join(chr(int(binary_text[i:i + 8], 2)) for i in range(0, len(binary_text), 8))
+            decoded_message = decode_LSB(img , "L$B")
             print("Çözülen metin:", decoded_message)
         else:
             print("Please enter a valid message")
-
-        # it represents the total number of bits available for hiding data in the image.
-
-
-
 
 
 
