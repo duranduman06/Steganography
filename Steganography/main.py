@@ -20,7 +20,7 @@ Algorithm to retrieve text message:-
 from PIL import Image
 import os
 # use C:\Users\DELL\Desktop\opencv\photos\z.jpg
-# use C:\Users\Lenovo\Desktop\Default_Ground.png
+
 
 def openImage(imgPath):
     img = None  # Initialize img as None
@@ -88,45 +88,16 @@ def save_stego_image(image, filename):
         print(f"Error: {e}")
         print("An error occurred while trying to save the stego image.")
 
-def decode_LSB(image, key):
-    width, height = image.size
-    binary_text = ""
-
-    for y in range(height):
-        for x in range(width):
-            pixel = list(image.getpixel((x, y))[:3])
-            lsb = pixel[2] & 1  # Örnek olarak mavi (B) kanalı kullanılıyor
-
-            binary_text += str(lsb)
-
-            if binary_text.endswith(key):
-                binary_text = binary_text[:-len(key)]  # Anahtar kelimenin son karakterlerini kaldırın
-                break
-
-    return binary_text
 
 def main():
     imgPath = str(input("Please enter the path of the image: "))
     img = openImage(imgPath)
     if img:
-
-        print("1: Encode")
-        print("2: Decode")
-        whoswho = str(input("Please Select a function: "))
-        if whoswho == '1':
-            txt = str(input("Please enter your text that you want to hide: ") + "L$B")
-            encode_name = str(input("Please enter a file name (ex: image.jpg): "))
-            lsb_values = calculate_LSB(img,txt)
-            save_image = save_stego_image(img, encode_name)  # Save the stego image
-
-        elif whoswho == '2':
-            binary_text = decode_LSB(img , "L$B")
-            decoded_message = "".join(chr(int(binary_text[i:i + 8], 2)) for i in range(0, len(binary_text), 8))
-            print("Çözülen metin:", decoded_message)
-        else:
-            print("Please enter a valid message")
-
+        txt = str(input("Please enter your text that you want to hide: "))
+        encode_name = str(input("Please enter a file name (ex: image.jpg): "))
+        lsb_values = calculate_LSB(img,txt)
         # it represents the total number of bits available for hiding data in the image.
+        save_image = save_stego_image(img, encode_name)  # Save the stego image
 
 
 
