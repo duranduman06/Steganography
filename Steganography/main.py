@@ -65,6 +65,8 @@ def calculate_LSB(image,txt):
 
     if len(binary_text) > total_pixels * 3:
         print("Text too long to be hidden in the image.")
+        return 0
+
     else:
         binary_index = 0                                        # Initialize an index for the binary message
         for y in range(height):
@@ -127,7 +129,8 @@ def main():
             txt = str(input("Please enter your text that you want to hide: ") + "L$B")
             encode_name = str(input("Please enter a file name (ex: image.png): "))
             img = calculate_LSB(img,txt)
-            save_image = save_stego_image(img, encode_name)  # Save the stego image
+            if img != 0:
+              save_image = save_stego_image(img, encode_name)  # Save the stego image
 
         elif whoswho == '2':
             decoded_message = decode_LSB(img , "L$B")
