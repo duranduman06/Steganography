@@ -38,10 +38,10 @@ def openImage(imgPath):
 
 def calculate_LSB(image,txt):
 
-    # Convert text message into binary
+    # Converts text message into binary
     binary_text = ''.join(format(ord(char), '08b') for char in txt)  # binary_text is a string
     print("Binary representation of the text:" ,binary_text)
-    # Split binary text into 8-bit segments and store in a list
+    # Splits binary text into 8-bit segments and stores in a list
     binary_list = [binary_text[i:i + 8] for i in range(0, len(binary_text), 8)]
     print("Binary representation of the text as List:", binary_list)
 
@@ -51,13 +51,13 @@ def calculate_LSB(image,txt):
     array = np.array(list(image.getdata()))
     total_pixels = array.size // 3 #RGB
 
-    lsb_values = []  # Initialize an empty list to store LSB values
+    lsb_values = []                                 # Initialize an empty list to store LSB values
     for y in range(height):
         for x in range(width):
-            pixel = image.getpixel((x, y))  # Get the pixel at (x, y)
+            pixel = image.getpixel((x, y))          # Get the pixel at (x, y)
             lsb = [pixel[c] & 1 for c in range(3)]  # Calculate LSB for each channel (R, G, B)
             lsb_values.append(lsb)
-    # Print LSB values (for the first 10 pixels)
+                                                    # Print LSB values (for the first 10 pixels)
     for i, lsb in enumerate(lsb_values[:10]):
         print(f"Pixel {i + 1}: R={lsb[0]}, G={lsb[1]}, B={lsb[2]}")
 
@@ -66,16 +66,16 @@ def calculate_LSB(image,txt):
     if len(binary_text) > total_pixels * 3:
         print("Text too long to be hidden in the image.")
     else:
-        binary_index = 0  # Initialize an index for the binary message
+        binary_index = 0                                        # Initialize an index for the binary message
         for y in range(height):
             for x in range(width):
-                if binary_index < len(binary_text):  # Check if there are more bits to hide
-                    pixel = list(image.getpixel((x, y))[:3])  # Get the pixel at (x, y) and extract the RGB channels
-                    for c in range(3):  # Loop through R, G, B channels
-                        if binary_index < len(binary_text):  # Check if there are more bits to hide
+                if binary_index < len(binary_text):             # Check if there are more bits to hide
+                    pixel = list(image.getpixel((x, y))[:3])    # Get the pixel at (x, y) and extract the RGB channels
+                    for c in range(3):                          # Loop through R, G, B channels
+                        if binary_index < len(binary_text):     # Check if there are more bits to hide
                             pixel[c] = (pixel[c] & 254) | int(binary_text[binary_index])
                             binary_index += 1
-                    image.putpixel((x, y), tuple(pixel))  # Update the pixel in the image
+                    image.putpixel((x, y), tuple(pixel))        # Update the pixel in the image
                 else:
                     break
     return image
@@ -93,25 +93,28 @@ def decode_LSB(image, key):
     binary_text = ""
     binary_index = 0
     current_binary = ""
+    key_txt = ''.join(format(ord(char), '08b') for char in key)
 
     for y in range(height):
         for x in range(width):
-            if binary_index < 8:  # Assuming each character is 8 bits
                 pixel = list(image.getpixel((x, y))[:3])
-                for color_channel in range(3):
-                    current_binary += str(pixel[color_channel] & 1)
+                for c in range(3):                          # Do this for every color channel R,G,B
+                    current_binary += str(pixel[c] & 1)     # Extracts the lsb value of the each color channel in a pixel and adds it into the current binary string.
                     if len(current_binary) == 8:
-                        if current_binary.endswith(key):
-                            return binary_text
-
                         binary_text += current_binary
+                        if binary_text.endswith(key_txt):
+                            decoded_message = "".join(chr(int(binary_text[i:i + 8], 2)) for i in range(0, len(binary_text),8))  # Convert the binary format to char format.
+                            decoded_message = decoded_message.replace(key,"")  # Remove the key from the decoded message.
+                            return decoded_message
                         current_binary = ""
                         binary_index += 1
-    decoded_message = "".join(chr(int(binary_text[i:i + 8], 2)) for i in range(0, len(binary_text), 8))
-    decoded_message = decoded_message.replace(key, "")  # Remove the key from the decoded message
+
+    decoded_message = "".join(chr(int(binary_text[i:i + 8], 2)) for i in range(0, len(binary_text), 8)) # Convert the binary format to char format.
+    decoded_message = decoded_message.replace(key, "")  # Remove the key from the decoded message.
     return decoded_message
 
-# C:\Users\DELL\Desktop\Steganography\Steno\Steganography\img.png
+# C:\Users\DELL\Desktop\Steganography\Steno\Steganography\asda.png
+
 
 def main():
     imgPath = str(input("Please enter the path of the image: "))
@@ -121,13 +124,13 @@ def main():
         print("2: Decode")
         whoswho = str(input("Please Select a function (1 or 2): "))
         if whoswho == '1':
-            txt = str(input("Please enter your text that you want to hide: ") + "L$B")
+            txt = str(input("Please enter your text that you want to hide: ") + "l$b")
             encode_name = str(input("Please enter a file name (ex: image.png): "))
             img = calculate_LSB(img,txt)
             save_image = save_stego_image(img, encode_name)  # Save the stego image
 
         elif whoswho == '2':
-            decoded_message = decode_LSB(img , "L$B")
+            decoded_message = decode_LSB(img , "l$b")
             print("Çözülen metin:", decoded_message)
         else:
             print("Please enter a valid message")
