@@ -100,9 +100,9 @@ def decode_LSB(image, key):
                 pixel = list(image.getpixel((x, y))[:3])
                 for c in range(3):                          # Do this for every color channel R,G,B
                     current_binary += str(pixel[c] & 1)     # Extracts the lsb value of the each color channel in a pixel and adds it into the current binary string.
-                    if len(current_binary) == 8:
+                    if len(current_binary) == 8:            # Check for every 8 bits (like for every char).
                         binary_text += current_binary
-                        if binary_text.endswith(key_txt):
+                        if binary_text.endswith(key_txt):   # Check if the binary text ends with the key part.
                             decoded_message = "".join(chr(int(binary_text[i:i + 8], 2)) for i in range(0, len(binary_text),8))  # Convert the binary format to char format.
                             decoded_message = decoded_message.replace(key,"")  # Remove the key from the decoded message.
                             return decoded_message
@@ -124,13 +124,13 @@ def main():
         print("2: Decode")
         whoswho = str(input("Please Select a function (1 or 2): "))
         if whoswho == '1':
-            txt = str(input("Please enter your text that you want to hide: ") + "l$b")
+            txt = str(input("Please enter your text that you want to hide: ") + "L$B")
             encode_name = str(input("Please enter a file name (ex: image.png): "))
             img = calculate_LSB(img,txt)
             save_image = save_stego_image(img, encode_name)  # Save the stego image
 
         elif whoswho == '2':
-            decoded_message = decode_LSB(img , "l$b")
+            decoded_message = decode_LSB(img , "L$B")
             print("Çözülen metin:", decoded_message)
         else:
             print("Please enter a valid message")
