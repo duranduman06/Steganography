@@ -40,17 +40,24 @@ def calculate_LSB(image,txt):
 
     # Converts text message into binary
     binary_text = ''.join(format(ord(char), '08b') for char in txt)  # binary_text is a string
-    print("Binary representation of the text:" ,binary_text)
+    #print("Binary representation of the text:" ,binary_text)
     # Splits binary text into 8-bit segments and stores in a list
     binary_list = [binary_text[i:i + 8] for i in range(0, len(binary_text), 8)]
-    print("Binary representation of the text as List:", binary_list)
+    #print("Binary representation of the text as List:", binary_list)
 
 
     image = image.convert("RGB")
     width, height = image.size
     array = np.array(list(image.getdata()))
     total_pixels = array.size // 3 #RGB
+    total_bits = total_pixels * 3
+    max_characters = total_bits // 8
 
+    print(f'Max char num for this image : {max_characters}')
+    print(f'Max bit num for this image : {total_bits}, bit num for the text : {len(binary_text)}')
+    print(f'byte num for the text : {len(binary_text)//8}')
+
+    """
     lsb_values = []                                 # Initialize an empty list to store LSB values
     for y in range(height):
         for x in range(width):
@@ -60,10 +67,10 @@ def calculate_LSB(image,txt):
                                                     # Print LSB values (for the first 10 pixels)
     for i, lsb in enumerate(lsb_values[:10]):
         print(f"Pixel {i + 1}: R={lsb[0]}, G={lsb[1]}, B={lsb[2]}")
+    """
 
 
-
-    if len(binary_text) > total_pixels * 3:
+    if len(binary_text) > total_bits:
         print("Text too long to be hidden in the image.")
         return 0
 
@@ -137,8 +144,6 @@ def main():
             print("Çözülen metin:", decoded_message)
         else:
             print("Please enter a valid message")
-
-
 
 if __name__ == "__main__":
     main()
