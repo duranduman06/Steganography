@@ -97,7 +97,8 @@ def save_stego_image(image, filename):
         print(f"Error: {e}")
         print("An error occurred while trying to save the stego image.")
 
-def decode_LSB(image, key):
+def decode_LSB(image):
+    key="L$B"
     width, height = image.size
     binary_text = ""
     binary_index = 0
@@ -140,7 +141,7 @@ def main():
               save_image = save_stego_image(img, encode_name)  # Save the stego image
 
         elif whoswho == '2':
-            decoded_message = decode_LSB(img , "L$B")
+            decoded_message = decode_LSB(img)
             print("Çözülen metin:", decoded_message)
         else:
             print("Please enter a valid message")
