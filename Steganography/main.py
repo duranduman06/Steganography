@@ -1,150 +1,708 @@
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PIL import Image
-import sys
 import numpy as np
-"""
-A. Lsb Based Steganography
-
-Algorithm to embed text message:-
-    Step 1: Read the cover image and text message which is to be hidden in the cover image.
-    Step 2: Convert text message in binary.
-    Step 3: Calculate LSB of each pixels of cover image.
-    Step 4: Replace LSB of cover image with each bit of secret message one by one.
-    Step 5: Write stego image
-
-Algorithm to retrieve text message:-
-    Step 1: Read the stego image.
-    Step 2: Calculate LSB of each pixels of stego image.
-    Step 3: Retrieve bits and convert each 8 bit into character.
-    
-"""
-from PIL import Image
+from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtWidgets import QPlainTextEdit, QFileDialog, QGraphicsView, QPushButton, QFrame
+from PyQt5.QtCore import QRect, Qt, QSize, QEventLoop
 import os
-# use C:\Users\DELL\Desktop\opencv\photos\z.jpg
-# use C:\Users\Lenovo\Desktop\Default_Ground.png
-
-def openImage(imgPath):
-    img = None  # Initialize img as None
-    try:
-        if os.path.exists(imgPath): #if the image path exists correctly
-            img = Image.open(imgPath,"r")
-        else:
-            print("Error: The specified path is incorrect. The file does not exist.")
-    except Exception as e:
-        print(f"Error: {e}")
-        print("An error occurred while trying to open the image.")
-
-    return img  # Return the img variable
 
 
-def calculate_LSB(image,txt):
+class Ui_SaveDecode(object):
+    def setupUi(self, SaveDecode):
+        if not SaveDecode.objectName():
+            SaveDecode.setObjectName(u"SaveDecode")
+        SaveDecode.setWindowModality(Qt.ApplicationModal)
+        SaveDecode.resize(1920, 1080)
+        icon = QIcon()
+        icon.addFile(u"../Desktop/undefined - Imgur.png", QSize(), QIcon.Normal, QIcon.Off)
+        SaveDecode.setWindowIcon(icon)
+        SaveDecode.setAutoFillBackground(False)
+        SaveDecode.setSizeGripEnabled(False)
+        self.EncPhoto = QGraphicsView(SaveDecode)
+        self.EncPhoto.setObjectName(u"EncPhoto")
+        self.EncPhoto.setGeometry(QRect(870, 40, 331, 241))
+        self.EncPhoto.setStyleSheet(u"\n"
+                                    "	selection-background-color:#f39c12;\n"
+                                    "	background-color:#000000;\n"
+                                    "	border: 1px solid #C0DB50;\n"
+                                    "	color: #a9b7c6;")
+        self.encPhotoButton = QPushButton(SaveDecode)
+        self.encPhotoButton.setObjectName(u"encPhotoButton")
+        self.encPhotoButton.setGeometry(QRect(990, 290, 93, 28))
+        self.encPhotoButton.setStyleSheet(u"QPushButton{\n"
+                                          "	border-style: solid;\n"
+                                          "	border-color: #050a0e;\n"
+                                          "	border-width: 1px;\n"
+                                          "	border-radius: 5px;\n"
+                                          "	color: #d3dae3;\n"
+                                          "	padding: 2px;\n"
+                                          "	background-color: #100E19;\n"
+                                          "}\n"
+                                          "QPushButton::default{\n"
+                                          "	border-style: solid;\n"
+                                          "	border-color: #050a0e;\n"
+                                          "	border-width: 1px;\n"
+                                          "	border-radius: 5px;\n"
+                                          "	color: #FFFFFF;\n"
+                                          "	padding: 2px;\n"
+                                          "	background-color: #151a1e;\n"
+                                          "}\n"
+                                          "QPushButton:hover{\n"
+                                          "	border-style: solid;\n"
+                                          "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #C0DB50, stop:0.4 #C0DB50, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                          "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #C0DB50, stop:1 #C0DB50);\n"
+                                          "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                          "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, s"
+                                          "top:1 #100E19);\n"
+                                          "	border-width: 2px;\n"
+                                          "    border-radius: 1px;\n"
+                                          "	color: #d3dae3;\n"
+                                          "	padding: 2px;\n"
+                                          "}\n"
+                                          "QPushButton:pressed{\n"
+                                          "	border-style: solid;\n"
+                                          "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #d33af1, stop:0.4 #d33af1, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                          "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #d33af1, stop:1 #d33af1);\n"
+                                          "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                          "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                          "	border-width: 2px;\n"
+                                          "    border-radius: 1px;\n"
+                                          "	color: #d3dae3;\n"
+                                          "	padding: 2px;\n"
+                                          "}")
+        self.EncodedPhoto = QGraphicsView(SaveDecode)
+        self.EncodedPhoto.setObjectName(u"EncodedPhoto")
+        self.EncodedPhoto.setGeometry(QRect(1380, 40, 331, 241))
+        self.EncodedPhoto.setStyleSheet(u"\n"
+                                        "	selection-background-color:#f39c12;\n"
+                                        "	background-color:#000000;\n"
+                                        "	border: 1px solid #C0DB50;\n"
+                                        "	color: #a9b7c6;")
+        self.DecPhoto = QGraphicsView(SaveDecode)
+        self.DecPhoto.setObjectName(u"DecPhoto")
+        self.DecPhoto.setGeometry(QRect(290, 700, 441, 241))
+        self.DecPhoto.setStyleSheet(u"\n"
+                                    "	selection-background-color:#f39c12;\n"
+                                    "	background-color:#000000;\n"
+                                    "	border: 1px solid #C0DB50;\n"
+                                    "	color: #a9b7c6;")
+        self.decPhoButton = QPushButton(SaveDecode)
+        self.decPhoButton.setObjectName(u"decPhoButton")
+        self.decPhoButton.setGeometry(QRect(450, 950, 93, 28))
+        self.decPhoButton.setStyleSheet(u"QPushButton{\n"
+                                        "	border-style: solid;\n"
+                                        "	border-color: #050a0e;\n"
+                                        "	border-width: 1px;\n"
+                                        "	border-radius: 5px;\n"
+                                        "	color: #d3dae3;\n"
+                                        "	padding: 2px;\n"
+                                        "	background-color: #100E19;\n"
+                                        "}\n"
+                                        "QPushButton::default{\n"
+                                        "	border-style: solid;\n"
+                                        "	border-color: #050a0e;\n"
+                                        "	border-width: 1px;\n"
+                                        "	border-radius: 5px;\n"
+                                        "	color: #FFFFFF;\n"
+                                        "	padding: 2px;\n"
+                                        "	background-color: #151a1e;\n"
+                                        "}\n"
+                                        "QPushButton:hover{\n"
+                                        "	border-style: solid;\n"
+                                        "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #C0DB50, stop:0.4 #C0DB50, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                        "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #C0DB50, stop:1 #C0DB50);\n"
+                                        "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                        "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, s"
+                                        "top:1 #100E19);\n"
+                                        "	border-width: 2px;\n"
+                                        "    border-radius: 1px;\n"
+                                        "	color: #d3dae3;\n"
+                                        "	padding: 2px;\n"
+                                        "}\n"
+                                        "QPushButton:pressed{\n"
+                                        "	border-style: solid;\n"
+                                        "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #d33af1, stop:0.4 #d33af1, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                        "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #d33af1, stop:1 #d33af1);\n"
+                                        "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                        "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                        "	border-width: 2px;\n"
+                                        "    border-radius: 1px;\n"
+                                        "	color: #d3dae3;\n"
+                                        "	padding: 2px;\n"
+                                        "}")
+        self.CommitDecode = QPushButton(SaveDecode)
+        self.CommitDecode.setObjectName(u"CommitDecode")
+        self.CommitDecode.setGeometry(QRect(910, 790, 141, 41))
+        self.CommitDecode.setStyleSheet(u"QPushButton{\n"
+                                        "	border-style: solid;\n"
+                                        "	border-color: #050a0e;\n"
+                                        "	border-width: 1px;\n"
+                                        "	border-radius: 5px;\n"
+                                        "	color: #d3dae3;\n"
+                                        "	padding: 2px;\n"
+                                        "	background-color: #100E19;\n"
+                                        "}\n"
+                                        "QPushButton::default{\n"
+                                        "	border-style: solid;\n"
+                                        "	border-color: #050a0e;\n"
+                                        "	border-width: 1px;\n"
+                                        "	border-radius: 5px;\n"
+                                        "	color: #FFFFFF;\n"
+                                        "	padding: 2px;\n"
+                                        "	background-color: #151a1e;\n"
+                                        "}\n"
+                                        "QPushButton:hover{\n"
+                                        "	border-style: solid;\n"
+                                        "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #C0DB50, stop:0.4 #C0DB50, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                        "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #C0DB50, stop:1 #C0DB50);\n"
+                                        "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                        "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, s"
+                                        "top:1 #100E19);\n"
+                                        "	border-width: 2px;\n"
+                                        "    border-radius: 1px;\n"
+                                        "	color: #d3dae3;\n"
+                                        "	padding: 2px;\n"
+                                        "}\n"
+                                        "QPushButton:pressed{\n"
+                                        "	border-style: solid;\n"
+                                        "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #d33af1, stop:0.4 #d33af1, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                        "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #d33af1, stop:1 #d33af1);\n"
+                                        "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                        "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                        "	border-width: 2px;\n"
+                                        "    border-radius: 1px;\n"
+                                        "	color: #d3dae3;\n"
+                                        "	padding: 2px;\n"
+                                        "}")
+        self.CommitEncode = QPushButton(SaveDecode)
+        self.CommitEncode.setObjectName(u"CommitEncode")
+        self.CommitEncode.setGeometry(QRect(1500, 290, 93, 28))
+        self.CommitEncode.setStyleSheet(u"QPushButton{\n"
+                                        "	border-style: solid;\n"
+                                        "	border-color: #050a0e;\n"
+                                        "	border-width: 1px;\n"
+                                        "	border-radius: 5px;\n"
+                                        "	color: #d3dae3;\n"
+                                        "	padding: 2px;\n"
+                                        "	background-color: #100E19;\n"
+                                        "}\n"
+                                        "QPushButton::default{\n"
+                                        "	border-style: solid;\n"
+                                        "	border-color: #050a0e;\n"
+                                        "	border-width: 1px;\n"
+                                        "	border-radius: 5px;\n"
+                                        "	color: #FFFFFF;\n"
+                                        "	padding: 2px;\n"
+                                        "	background-color: #151a1e;\n"
+                                        "}\n"
+                                        "QPushButton:hover{\n"
+                                        "	border-style: solid;\n"
+                                        "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #C0DB50, stop:0.4 #C0DB50, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                        "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #C0DB50, stop:1 #C0DB50);\n"
+                                        "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                        "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, s"
+                                        "top:1 #100E19);\n"
+                                        "	border-width: 2px;\n"
+                                        "    border-radius: 1px;\n"
+                                        "	color: #d3dae3;\n"
+                                        "	padding: 2px;\n"
+                                        "}\n"
+                                        "QPushButton:pressed{\n"
+                                        "	border-style: solid;\n"
+                                        "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #d33af1, stop:0.4 #d33af1, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                        "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #d33af1, stop:1 #d33af1);\n"
+                                        "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                        "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                        "	border-width: 2px;\n"
+                                        "    border-radius: 1px;\n"
+                                        "	color: #d3dae3;\n"
+                                        "	padding: 2px;\n"
+                                        "}")
+        self.pushButton = QPushButton(SaveDecode)
+        self.pushButton.setObjectName(u"pushButton")
+        self.pushButton.setGeometry(QRect(1410, 950, 93, 28))
+        self.pushButton.setStyleSheet(u"QPushButton{\n"
+                                      "	border-style: solid;\n"
+                                      "	border-color: #050a0e;\n"
+                                      "	border-width: 1px;\n"
+                                      "	border-radius: 5px;\n"
+                                      "	color: #d3dae3;\n"
+                                      "	padding: 2px;\n"
+                                      "	background-color: #100E19;\n"
+                                      "}\n"
+                                      "QPushButton::default{\n"
+                                      "	border-style: solid;\n"
+                                      "	border-color: #050a0e;\n"
+                                      "	border-width: 1px;\n"
+                                      "	border-radius: 5px;\n"
+                                      "	color: #FFFFFF;\n"
+                                      "	padding: 2px;\n"
+                                      "	background-color: #151a1e;\n"
+                                      "}\n"
+                                      "QPushButton:hover{\n"
+                                      "	border-style: solid;\n"
+                                      "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #C0DB50, stop:0.4 #C0DB50, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                      "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #C0DB50, stop:1 #C0DB50);\n"
+                                      "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                      "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, s"
+                                      "top:1 #100E19);\n"
+                                      "	border-width: 2px;\n"
+                                      "    border-radius: 1px;\n"
+                                      "	color: #d3dae3;\n"
+                                      "	padding: 2px;\n"
+                                      "}\n"
+                                      "QPushButton:pressed{\n"
+                                      "	border-style: solid;\n"
+                                      "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #d33af1, stop:0.4 #d33af1, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                      "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #d33af1, stop:1 #d33af1);\n"
+                                      "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                      "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                      "	border-width: 2px;\n"
+                                      "    border-radius: 1px;\n"
+                                      "	color: #d3dae3;\n"
+                                      "	padding: 2px;\n"
+                                      "}")
+        self.encText = QPlainTextEdit(SaveDecode)
+        self.encText.setObjectName(u"encText")
+        self.encText.setGeometry(QRect(250, 40, 461, 241))
+        self.encText.setStyleSheet(u"\n"
+                                   "	selection-background-color:#f39c12;\n"
+                                   "	background-color:#000000;\n"
+                                   "	border: 1px solid #C0DB50;\n"
+                                   "	color: #a9b7c6;")
+        self.DecodedText = QPlainTextEdit(SaveDecode)
+        self.DecodedText.setObjectName(u"DecodedText")
+        self.DecodedText.setGeometry(QRect(1220, 700, 501, 241))
+        self.DecodedText.setStyleSheet(u"\n"
+                                       "	selection-background-color:#f39c12;\n"
+                                       "	background-color:#000000;\n"
+                                       "	border: 1px solid #C0DB50;\n"
+                                       "	color: #a9b7c6;")
+        self.TerminalOutput = QPlainTextEdit(SaveDecode)
+        self.TerminalOutput.setObjectName(u"TerminalOutput")
+        self.TerminalOutput.setGeometry(QRect(80, 390, 1801, 241))
+        self.TerminalOutput.setStyleSheet(u"\n"
+                                          "	selection-background-color:#f39c12;\n"
+                                          "	background-color:#000000;\n"
+                                          "	border: 1px solid #C0DB50;\n"
+                                          "	color: #a9b7c6;")
+        self.frame = QFrame(SaveDecode)
+        self.frame.setObjectName(u"frame")
+        self.frame.setGeometry(QRect(9, -1, 2011, 1181))
+        self.frame.setStyleSheet(
+            u"background-color:qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(88, 0, 255, 255))")
+        self.frame.setFrameShape(QFrame.StyledPanel)
+        self.frame.setFrameShadow(QFrame.Raised)
+        self.txtButton = QPushButton(self.frame)
+        self.txtButton.setObjectName(u"txtButton")
+        self.txtButton.setGeometry(QRect(420, 290, 111, 28))
+        self.txtButton.setStyleSheet(u"QPushButton{\n"
+                                     "	border-style: solid;\n"
+                                     "	border-color: #050a0e;\n"
+                                     "	border-width: 1px;\n"
+                                     "	border-radius: 5px;\n"
+                                     "	color: #d3dae3;\n"
+                                     "	padding: 2px;\n"
+                                     "	background-color: #100E19;\n"
+                                     "}\n"
+                                     "QPushButton::default{\n"
+                                     "	border-style: solid;\n"
+                                     "	border-color: #050a0e;\n"
+                                     "	border-width: 1px;\n"
+                                     "	border-radius: 5px;\n"
+                                     "	color: #FFFFFF;\n"
+                                     "	padding: 2px;\n"
+                                     "	background-color: #151a1e;\n"
+                                     "}\n"
+                                     "QPushButton:hover{\n"
+                                     "	border-style: solid;\n"
+                                     "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #C0DB50, stop:0.4 #C0DB50, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                     "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #C0DB50, stop:1 #C0DB50);\n"
+                                     "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                     "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, s"
+                                     "top:1 #100E19);\n"
+                                     "	border-width: 2px;\n"
+                                     "    border-radius: 1px;\n"
+                                     "	color: #d3dae3;\n"
+                                     "	padding: 2px;\n"
+                                     "}\n"
+                                     "QPushButton:pressed{\n"
+                                     "	border-style: solid;\n"
+                                     "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #d33af1, stop:0.4 #d33af1, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                     "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #d33af1, stop:1 #d33af1);\n"
+                                     "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                     "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                     "	border-width: 2px;\n"
+                                     "    border-radius: 1px;\n"
+                                     "	color: #d3dae3;\n"
+                                     "	padding: 2px;\n"
+                                     "}")
+        self.resetButton = QPushButton(self.frame)
+        self.resetButton.setObjectName(u"resetButton")
+        self.resetButton.setGeometry(QRect(920, 880, 93, 28))
+        self.resetButton.setStyleSheet(u"QPushButton{\n"
+                                       "	border-style: solid;\n"
+                                       "	border-color: #050a0e;\n"
+                                       "	border-width: 1px;\n"
+                                       "	border-radius: 5px;\n"
+                                       "	color: #d3dae3;\n"
+                                       "	padding: 2px;\n"
+                                       "	background-color: #100E19;\n"
+                                       "}\n"
+                                       "QPushButton::default{\n"
+                                       "	border-style: solid;\n"
+                                       "	border-color: #050a0e;\n"
+                                       "	border-width: 1px;\n"
+                                       "	border-radius: 5px;\n"
+                                       "	color: #FFFFFF;\n"
+                                       "	padding: 2px;\n"
+                                       "	background-color: #151a1e;\n"
+                                       "}\n"
+                                       "QPushButton:hover{\n"
+                                       "	border-style: solid;\n"
+                                       "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #C0DB50, stop:0.4 #C0DB50, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                       "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #C0DB50, stop:1 #C0DB50);\n"
+                                       "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                       "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #C0DB50, stop:0.3 #C0DB50, stop:0.7 #100E19, s"
+                                       "top:1 #100E19);\n"
+                                       "	border-width: 2px;\n"
+                                       "    border-radius: 1px;\n"
+                                       "	color: #d3dae3;\n"
+                                       "	padding: 2px;\n"
+                                       "}\n"
+                                       "QPushButton:pressed{\n"
+                                       "	border-style: solid;\n"
+                                       "	border-top-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #d33af1, stop:0.4 #d33af1, stop:0.5 #100E19, stop:1 #100E19);\n"
+                                       "    border-bottom-color: qlineargradient(spread:pad, x1:0, y1:1, x2:1, y2:1, stop:0 #100E19, stop:0.5 #100E19, stop:0.6 #d33af1, stop:1 #d33af1);\n"
+                                       "    border-left-color: qlineargradient(spread:pad, x1:0, y1:0, x2:0, y2:1, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                       "    border-right-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 #d33af1, stop:0.3 #d33af1, stop:0.7 #100E19, stop:1 #100E19);\n"
+                                       "	border-width: 2px;\n"
+                                       "    border-radius: 1px;\n"
+                                       "	color: #d3dae3;\n"
+                                       "	padding: 2px;\n"
+                                       "}")
+        self.frame.raise_()
+        self.EncPhoto.raise_()
+        self.EncodedPhoto.raise_()
+        self.encPhotoButton.raise_()
+        self.EncodedPhoto.raise_()
+        self.DecPhoto.raise_()
+        self.decPhoButton.raise_()
+        self.CommitDecode.raise_()
+        self.CommitEncode.raise_()
+        self.pushButton.raise_()
+        self.encText.raise_()
+        self.DecodedText.raise_()
+        self.TerminalOutput.raise_()
 
-    # Converts text message into binary
-    binary_text = ''.join(format(ord(char), '08b') for char in txt)  # binary_text is a string
-    #print("Binary representation of the text:" ,binary_text)
-    # Splits binary text into 8-bit segments and stores in a list
-    binary_list = [binary_text[i:i + 8] for i in range(0, len(binary_text), 8)]
-    #print("Binary representation of the text as List:", binary_list)
+        self.retranslateUi(SaveDecode)
+        QtCore.QMetaObject.connectSlotsByName(SaveDecode)
+
+        # Connect the buttons to the functions in the LSB steganography app
+        self.txtButton.clicked.connect(self.select_text)
+        self.encPhotoButton.clicked.connect(self.select_image_for_encoding)
+        self.decPhoButton.clicked.connect(self.select_image_for_decoding)
+        self.CommitDecode.clicked.connect(self.decode_image)
+        self.CommitEncode.clicked.connect(self.encode_text)
+        self.pushButton.clicked.connect(self.save_decoded_text)
+        self.resetButton.clicked.connect(self.reset_ui)
+        # Initialize variables for image and text
+        self.img = None
+        self.text = ""
+
+    def retranslateUi(self, SaveDecode):
+        _translate = QtCore.QCoreApplication.translate
+        SaveDecode.setWindowTitle(_translate("SaveDecode", "LSB Stego Encoder/Decoder"))
+        self.txtButton.setText(_translate("SaveDecode", "Select your text"))
+        self.encText.setPlainText(_translate("SaveDecode", "Please select your text "))
+        self.encPhotoButton.setText(_translate("SaveDecode", "Photo Select"))
+        self.decPhoButton.setText(_translate("SaveDecode", "Photo select"))
+        self.DecodedText.setPlainText(_translate("SaveDecode", "Decoded Text"))
+        self.CommitDecode.setText(_translate("SaveDecode", "Decode"))
+        self.CommitEncode.setText(_translate("SaveDecode", "Encode"))
+        self.TerminalOutput.setPlainText(_translate("SaveDecode", "Outputs:"))
+        self.pushButton.setText(_translate("SaveDecode", "Save Text"))
+        self.resetButton.setText(_translate("reset_ui", "Reset"))
+
+    def reset_ui(self):
+        # Reset image and text variables
+        self.img = None
+        self.text = ""
+
+        # Clear UI elements
+        self.encText.setPlainText("Please select your text ")
+        self.EncPhoto.setScene(None)
+        self.DecPhoto.setScene(None)
+        self.TerminalOutput.setPlainText("Outputs:")
+        self.DecodedText.setPlainText("Decoded Text")
+    def select_text(self):
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.DontUseNativeDialog
+        file_name, _ = QtWidgets.QFileDialog.getOpenFileName(None, "Select Text File", "", "Text Files (*.txt);;All Files (*)", options=options)
+        if file_name:
+            with open(file_name, 'r') as file:
+                self.text = file.read()
+            self.encText.setPlainText(f"Selected Text: {self.text}")
+            self.update_terminal_output(f"Selected Text: {file_name}")
+            self.update_terminal_output(f"Text is selected please proceed with selecting photo")
+
+    def update_terminal_output(self, message):
+        current_text = self.TerminalOutput.toPlainText()
+
+        try:
+            # Attempt to decode as hexadecimal
+            formatted_message = bytes.fromhex(message).decode('utf-8', errors='replace')
+        except ValueError:
+            # If decoding fails, display the original message
+            formatted_message = message
+
+        self.TerminalOutput.setPlainText(current_text + formatted_message + "\n")
+
+        # Scroll down to the bottom after adding new text
+        scrollbar = self.TerminalOutput.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+
+        # Ensure the GUI updates immediately
+        QtWidgets.QApplication.processEvents(QtCore.QEventLoop.ExcludeUserInputEvents)
+
+    def select_image_for_encoding(self):
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.DontUseNativeDialog
+        file_name, _ = QtWidgets.QFileDialog.getOpenFileName(
+            None, "Select Image for Encoding", "", "Image Files (*.png *.jpg *.bmp);;All Files (*)", options=options
+        )
+        if file_name:
+            self.img = Image.open(file_name)
+
+            # Store the last selected image
+            self.last_selected_image = self.img.copy()
+
+            # Scale the image to fit within the QGraphicsView dimensions
+            pixmap = self.get_scaled_pixmap(file_name, self.EncPhoto.width(), self.EncPhoto.height())
 
 
-    image = image.convert("RGB")
-    width, height = image.size
-    array = np.array(list(image.getdata()))
-    total_pixels = array.size // 3 #RGB
-    total_bits = total_pixels * 3
-    max_characters = total_bits // 8
+            self.EncPhoto.setScene(QtWidgets.QGraphicsScene())
+            self.EncPhoto.scene().addPixmap(pixmap)
+            self.update_terminal_output(f"Selected Photo: {file_name}")
+            self.update_terminal_output(f"Image is selected please proceed with encoding")
 
-    print(f'Max char num for this image : {max_characters}')
-    print(f'Max bit num for this image : {total_bits}, bit num for the text : {len(binary_text)}')
-    print(f'byte num for the text : {len(binary_text)//8}')
+    def select_image_for_decoding(self):
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.DontUseNativeDialog
+        file_name, _ = QtWidgets.QFileDialog.getOpenFileName(
+            None, "Select Image for Decoding", "", "Image Files (*.png *.jpg *.bmp);;All Files (*)", options=options
+        )
+        if file_name:
+            self.img = Image.open(file_name)
 
-    """
-    lsb_values = []                                 # Initialize an empty list to store LSB values
-    for y in range(height):
-        for x in range(width):
-            pixel = image.getpixel((x, y))          # Get the pixel at (x, y)
-            lsb = [pixel[c] & 1 for c in range(3)]  # Calculate LSB for each channel (R, G, B)
-            lsb_values.append(lsb)
-                                                    # Print LSB values (for the first 10 pixels)
-    for i, lsb in enumerate(lsb_values[:10]):
-        print(f"Pixel {i + 1}: R={lsb[0]}, G={lsb[1]}, B={lsb[2]}")
-    """
+            # Scale the image to fit within the QGraphicsView dimensions
+            pixmap = self.get_scaled_pixmap(file_name, self.DecPhoto.width(), self.DecPhoto.height())
+
+            self.DecPhoto.setScene(QtWidgets.QGraphicsScene())
+            self.DecPhoto.scene().addPixmap(pixmap)
+            self.update_terminal_output(f"Selected Photo: {file_name}")
+            self.update_terminal_output(f"Image is selected please proceed with decoding")
+    def get_scaled_pixmap(self, file_name, width, height):
+        original_pixmap = QtGui.QPixmap(file_name)
+        return original_pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatio)
+
+    def decode_image(self):
+        if self.img:
+            decoded_message = self.decode_LSB(self.img, "L$B")
+            self.DecodedText.setPlainText(f"Decoded Text: {decoded_message}")
+            self.update_terminal_output(f"Decoding Completed")
+
+    def encode_text_helper(self, remaining_text, counter):
+        self.img, has_remaining_text, binary_index = self.calculate_LSB(self.img, remaining_text)
+        print(has_remaining_text, binary_index)
+        if self.last_selected_image:
+            last_selected_pixmap = self.get_scaled_pixmap(
+                self.last_selected_image, self.EncodedPhoto.width(), self.EncodedPhoto.height()
+            )
+            self.EncodedPhoto.setScene(QtWidgets.QGraphicsScene())
+            self.EncodedPhoto.scene().addPixmap(last_selected_pixmap)
+
+        # Extract the ASCII characters from the remaining text
+        remaining_ascii_text = ""
+        while binary_index < len(remaining_text):
+            current_byte = remaining_text[binary_index:binary_index + 8]
+            remaining_ascii_text += chr(int(current_byte, 2))
+            binary_index += 8
+        self.update_terminal_output(f"Remaining Text: {remaining_ascii_text}")
+        self.update_terminal_output(f"Binary Index: {binary_index}")
+        # Display the last selected image on encoding
+        if self.last_selected_image:
+            last_selected_pixmap = self.get_scaled_pixmap(
+                self.last_selected_image, self.EncPhoto.width(), self.EncPhoto.height()
+            )
+            self.EncPhoto.setScene(QtWidgets.QGraphicsScene())
+            self.EncPhoto.scene().addPixmap(last_selected_pixmap)
+        # Ask the user to input the name for the encoded image
+        options = QtWidgets.QFileDialog.Options()
+        options |= QtWidgets.QFileDialog.DontUseNativeDialog
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(None, f"Save Encoded Image {counter}", "",
+                                                            "Image Files (*.png);;All Files (*)", options=options)
 
 
-    if len(binary_text) > total_bits:
-        print("Text too long to be hidden in the image.")
-        return 0
+        if filename:
+            self.save_stego_image(self.img, filename)
 
-    else:
-        binary_index = 0                                        # Initialize an index for the binary message
+        return filename,has_remaining_text, remaining_text[binary_index:] if has_remaining_text else ""
+
+    def encode_text(self,filename):
+        if self.img and self.text:
+            text_to_encode = self.text + "L$B"
+            binary_text = ''.join(format(ord(char), '08b') for char in text_to_encode)
+
+            counter = 1  # Counter for naming multiple images
+            options = QtWidgets.QFileDialog.Options()
+            options |= QtWidgets.QFileDialog.DontUseNativeDialog
+
+            while binary_text:
+                self.img, binary_index = self.calculate_LSB(self.img, binary_text)
+                self.update_terminal_output(f"Step {counter} Encoding in Progress...")
+
+                # Save the stego image
+                self.save_stego_image(self.img, filename)
+
+                # Update the EncodedPhoto with the current stego image
+                self.update_encoded_photo(filename)
+
+                binary_text = binary_text[binary_index:]
+                counter += 1
+
+                if binary_text and counter > 1:
+                    img_path, _ = QtWidgets.QFileDialog.getOpenFileName(
+                        None, "Select Another Image for Encoding", "", "Image Files (*.png *.jpg *.bmp);;All Files (*)",
+                        options=options)
+                    if img_path:
+                        self.img = Image.open(img_path)
+                    else:
+                        self.update_terminal_output(f"Something Went wrong")
+                        break
+
+                    if binary_text:
+                        self.text = self.text[binary_index:] + "L$B"
+
+                # Update the GUI
+                chunk_size = 8
+                chunks = [binary_text[i:i + chunk_size] for i in range(binary_index, len(binary_text), chunk_size)]
+                ascii_text = "".join(chr(int(chunk, 2)) for chunk in chunks)
+                self.update_terminal_output(f"Remaining Text: {ascii_text}")
+                self.update_terminal_output(f"Binary Index: {binary_index}")
+                if binary_text:
+                    self.update_terminal_output(
+                        f"Image was not enough. Please select a new image to continue from remaining.")
+                else:
+                    self.update_terminal_output(f"Encoding Completed")
+
+                # Allow the GUI to update
+                QtWidgets.QApplication.processEvents(QtCore.QEventLoop.ExcludeUserInputEvents)
+
+    def update_encoded_photo(self, filename):
+        # Update the EncodedPhoto QGraphicsView with the current stego image
+        if filename:
+            img = Image.open(filename)
+            pixmap = self.get_scaled_pixmap(filename, self.EncodedPhoto.width(), self.EncodedPhoto.height())
+            self.EncodedPhoto.setScene(QtWidgets.QGraphicsScene())
+            self.EncodedPhoto.scene().addPixmap(pixmap)
+            self.update_terminal_output(f"Selected Photo: {filename}")
+            self.update_terminal_output(f"Image is selected please proceed with encoding")
+
+    def save_decoded_text(self):
+        decoded_text = self.DecodedText.toPlainText()
+        if decoded_text:
+            options = QtWidgets.QFileDialog.Options()
+            options |= QtWidgets.QFileDialog.DontUseNativeDialog
+            file_name, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Save Decoded Text", "", "Text Files (*.txt);;All Files (*)", options=options)
+            if file_name:
+                with open(file_name, 'w') as file:
+                    file.write(decoded_text)
+                    self.update_terminal_output(f"Selected Photo: {file_name}")
+                    self.update_terminal_output(f"Text is saved successfully")
+
+    def decode_LSB(self, image, key):
+        width, height = image.size
+        binary_text = ""
+        current_binary = ""
+        key_txt = ''.join(format(ord(char), '08b') for char in key)
+
         for y in range(height):
             for x in range(width):
-                if binary_index < len(binary_text):             # Check if there are more bits to hide
-                    pixel = list(image.getpixel((x, y))[:3])    # Get the pixel at (x, y) and extract the RGB channels
-                    for c in range(3):                          # Loop through R, G, B channels
-                        if binary_index < len(binary_text):     # Check if there are more bits to hide
-                            pixel[c] = (pixel[c] & 254) | int(binary_text[binary_index])
-                            binary_index += 1
-                    image.putpixel((x, y), tuple(pixel))        # Update the pixel in the image
-                else:
-                    break
-    return image
-
-def save_stego_image(image, filename):
-    try:
-        image.save(filename)
-        print(f"Stego image saved as {filename}")
-    except Exception as e:
-        print(f"Error: {e}")
-        print("An error occurred while trying to save the stego image.")
-
-def decode_LSB(image):
-    key="L$B"
-    width, height = image.size
-    binary_text = ""
-    binary_index = 0
-    current_binary = ""
-    key_txt = ''.join(format(ord(char), '08b') for char in key)
-
-    for y in range(height):
-        for x in range(width):
                 pixel = list(image.getpixel((x, y))[:3])
-                for c in range(3):                          # Do this for every color channel R,G,B
-                    current_binary += str(pixel[c] & 1)     # Extracts the lsb value of the each color channel in a pixel and adds it into the current binary string.
-                    if len(current_binary) == 8:            # Check for every 8 bits (like for every char).
+                for c in range(3):
+                    current_binary += str(pixel[c] & 1)
+                    if len(current_binary) == 8:
                         binary_text += current_binary
-                        if binary_text.endswith(key_txt):   # Check if the binary text ends with the key part.
-                            decoded_message = "".join(chr(int(binary_text[i:i + 8], 2)) for i in range(0, len(binary_text),8))  # Convert the binary format to char format.
-                            decoded_message = decoded_message.replace(key,"")  # Remove the key from the decoded message.
+                        if binary_text.endswith(key_txt):
+                            decoded_message = "".join(
+                                chr(int(binary_text[i:i + 8], 2)) for i in range(0, len(binary_text), 8) if
+                                i + 8 <= len(binary_text)
+                            )
+
+                            decoded_message = decoded_message.replace(key, "")
                             return decoded_message
                         current_binary = ""
-                        binary_index += 1
+        decoded_message = "".join(
+            chr(int(binary_text[i:i + 8], 2)) for i in range(0, len(binary_text), 8) if i + 8 <= len(binary_text)
+        )
 
-    decoded_message = "".join(chr(int(binary_text[i:i + 8], 2)) for i in range(0, len(binary_text), 8)) # Convert the binary format to char format.
-    decoded_message = decoded_message.replace(key, "")  # Remove the key from the decoded message.
-    return decoded_message
+        decoded_message = decoded_message.replace(key, "")
 
-# C:\Users\DELL\Desktop\Steganography\Steno\Steganography\asda.png
+        return decoded_message
 
+    def calculate_LSB(self, image, binary_text):
+        image = image.convert("RGB")
+        width, height = image.size
+        array = np.array(list(image.getdata()))
 
-def main():
-    imgPath = str(input("Please enter the path of the image: "))
-    img = openImage(imgPath)
-    if img:
-        print("1: Encode")
-        print("2: Decode")
-        whoswho = str(input("Please Select a function (1 or 2): "))
-        if whoswho == '1':
-            txt = str(input("Please enter your text that you want to hide: ") + "L$B")
-            encode_name = str(input("Please enter a file name (ex: image.png): "))
-            img = calculate_LSB(img,txt)
-            if img != 0:
-              save_image = save_stego_image(img, encode_name)  # Save the stego image
+        total_pixels = array.size // 3
+        total_bits = total_pixels * 3
+        max_characters = total_bits // 8
 
-        elif whoswho == '2':
-            decoded_message = decode_LSB(img)
-            print("Çözülen metin:", decoded_message)
-        else:
-            print("Please enter a valid message")
+        if len(binary_text) > total_bits:
+            self.update_terminal_output(f"Warning: Text may not be fully hidden in the image. It exceeds the image capacity.")
+        binary_index = 0
+        for y in range(height):
+            for x in range(width):
+                if binary_index < len(binary_text):
+                    pixel = list(image.getpixel((x, y))[:3])
+                    for c in range(3):
+                        if binary_index < len(binary_text):
+                            pixel[c] = (pixel[c] & 254) | int(binary_text[binary_index])
+                            binary_index += 1
+                    image.putpixel((x, y), tuple(pixel))
+                else:
+                    break
+
+        return image, binary_index
+
+    def save_stego_image(self,image, filename):
+        if self.img:
+            # Ask the user to enter a custom name for the encoded image
+            options = QtWidgets.QFileDialog.Options()
+            options |= QtWidgets.QFileDialog.DontUseNativeDialog
+            filename, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Save Encoded Image", "",
+                                                                "Image Files (*.png);;All Files (*)", options=options)
+
+            if filename:
+                try:
+                    self.img.save(filename)
+                    self.update_terminal_output(f"Stego image saved as {filename}")
+
+                except Exception as e:
+
+                    self.update_terminal_output(
+                        f"Error: {e}")
+                    self.update_terminal_output(
+                        f"An error occurred while trying to save the stego image.")
 
 if __name__ == "__main__":
-    main()
+    import sys
+    app = QtWidgets.QApplication(sys.argv)
+    SaveDecode = QtWidgets.QDialog()
+    ui = Ui_SaveDecode()
+    ui.setupUi(SaveDecode)
+    SaveDecode.show()
+    SaveDecode.showMaximized()
+    sys.exit(app.exec_())
