@@ -2,9 +2,10 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PIL import Image
 import numpy as np
 from PyQt5.QtGui import QPixmap, QIcon
-from PyQt5.QtWidgets import QPlainTextEdit, QFileDialog, QGraphicsView, QPushButton, QFrame
+from PyQt5.QtWidgets import QPlainTextEdit, QFileDialog, QGraphicsView, QPushButton, QFrame, QProgressBar
 from PyQt5.QtCore import QRect, Qt, QSize, QEventLoop
 import os
+import time
 
 
 class Ui_SaveDecode(object):
@@ -337,6 +338,23 @@ class Ui_SaveDecode(object):
                                      "	color: #d3dae3;\n"
                                      "	padding: 2px;\n"
                                      "}")
+
+        self.progressBar = QProgressBar(self.frame)
+        self.progressBar.setObjectName(u"progressBar")
+        self.progressBar.setGeometry(QRect(570, 330, 760, 40))
+        self.progressBar.setStyleSheet(u"QProgressBar{\n"
+                                       "background-color: rgb(200,200,200);\n"
+                                       "color: rgb(170,85,127);\n"
+                                       "border-style:solid;\n"
+                                       "border-radius: 10px;\n"
+                                       "text-align: center;\n"
+                                       "}\n"
+                                       "QProgressBar::chunk{\n"
+                                       "border-radius: 10px;\n"
+                                       "background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:1, stop:0 rgba(118, 62, 167, 255), stop:1 rgba(64, 136, 167, 255));\n"
+                                       "\n"
+                                       "}")
+
         self.resetButton = QPushButton(self.frame)
         self.resetButton.setObjectName(u"resetButton")
         self.resetButton.setGeometry(QRect(920, 880, 93, 28))
@@ -382,6 +400,7 @@ class Ui_SaveDecode(object):
                                        "	padding: 2px;\n"
                                        "}")
         self.frame.raise_()
+        self.progressBar.setValue(30)
         self.EncPhoto.raise_()
         self.EncodedPhoto.raise_()
         self.encPhotoButton.raise_()
@@ -508,9 +527,12 @@ class Ui_SaveDecode(object):
 
     def decode_image(self):
         if self.img:
+            self.timer_start = time.time()
             decoded_message = self.decode_LSB(self.img, "L$B")
             self.DecodedText.setPlainText(f"Decoded Text: {decoded_message}")
             self.update_terminal_output(f"Decoding Completed")
+            elapsed_time = time.time() - self.timer_start
+            self.update_terminal_output(f"Decoding Time: {elapsed_time:.2f} seconds")
 
     def encode_text_helper(self, remaining_text, counter):
         self.img, has_remaining_text, binary_index = self.calculate_LSB(self.img, remaining_text)
@@ -546,11 +568,13 @@ class Ui_SaveDecode(object):
 
         if filename:
             self.save_stego_image(self.img, filename)
-
+        elapsed_time = time.time() - self.timer_start
+        self.update_terminal_output(f"Decoding Time: {elapsed_time:.2f} seconds")
         return filename,has_remaining_text, remaining_text[binary_index:] if has_remaining_text else ""
 
     def encode_text(self,filename):
         if self.img and self.text:
+            self.timer_start = time.time()
             text_to_encode = self.text + "L$B"
             binary_text = ''.join(format(ord(char), '08b') for char in text_to_encode)
 
@@ -561,7 +585,8 @@ class Ui_SaveDecode(object):
             while binary_text:
                 self.img, binary_index = self.calculate_LSB(self.img, binary_text)
                 self.update_terminal_output(f"Step {counter} Encoding in Progress...")
-
+                elapsed_time = time.time() - self.timer_start
+                self.update_terminal_output(f"Encoding Time: {elapsed_time:.2f} seconds")
                 # Save the stego image
                 self.save_stego_image(self.img, filename)
 
@@ -572,8 +597,9 @@ class Ui_SaveDecode(object):
                 counter += 1
 
                 if binary_text and counter > 1:
+
                     img_path, _ = QtWidgets.QFileDialog.getOpenFileName(
-                        None, "Select Another Image for Encoding", "", "Image Files (*.png *.jpg *.bmp);;All Files (*)",
+                        None, "Select Another Image for Encoding", "", "Image Files (*.png *.jpg *.bmp);;All Files (*) a",
                         options=options)
                     if img_path:
                         self.img = Image.open(img_path)
@@ -595,6 +621,8 @@ class Ui_SaveDecode(object):
                         f"Image was not enough. Please select a new image to continue from remaining.")
                 else:
                     self.update_terminal_output(f"Encoding Completed")
+
+
 
                 # Allow the GUI to update
                 QtWidgets.QApplication.processEvents(QtCore.QEventLoop.ExcludeUserInputEvents)
