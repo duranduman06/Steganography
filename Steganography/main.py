@@ -3,10 +3,9 @@ from PIL import Image
 import numpy as np
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QPlainTextEdit, QFileDialog, QGraphicsView, QPushButton, QFrame, QProgressBar
-from PyQt5.QtCore import QRect, Qt, QSize, QEventLoop
+from PyQt5.QtCore import QRect, Qt, QSize, QEventLoop, QThread, pyqtSignal
 import os
 import time
-
 
 class Ui_SaveDecode(object):
     def setupUi(self, SaveDecode):
@@ -400,7 +399,7 @@ class Ui_SaveDecode(object):
                                        "	padding: 2px;\n"
                                        "}")
         self.frame.raise_()
-        self.progressBar.setValue(30)
+        self.progressBar.setValue(0)
         self.EncPhoto.raise_()
         self.EncodedPhoto.raise_()
         self.encPhotoButton.raise_()
@@ -415,6 +414,7 @@ class Ui_SaveDecode(object):
         self.TerminalOutput.raise_()
 
         self.retranslateUi(SaveDecode)
+        self.encoding_completed = False
         QtCore.QMetaObject.connectSlotsByName(SaveDecode)
 
         # Connect the buttons to the functions in the LSB steganography app
@@ -429,6 +429,22 @@ class Ui_SaveDecode(object):
         self.img = None
         self.text = ""
 
+        self.timer_running = False
+        self.timer_start = 0
+        self.loss_time = 0
+
+    def start_timer(self):
+        self.timer_start = time.time()
+        self.timer_running = True
+
+    def stop_timer(self):
+        self.timer_running = False
+
+    def elapsed_time(self):
+        if self.timer_running:
+            return time.time() - self.timer_start
+        else:
+            return 0
     def retranslateUi(self, SaveDecode):
         _translate = QtCore.QCoreApplication.translate
         SaveDecode.setWindowTitle(_translate("SaveDecode", "LSB Stego Encoder/Decoder"))
@@ -454,10 +470,13 @@ class Ui_SaveDecode(object):
         self.DecPhoto.setScene(None)
         self.TerminalOutput.setPlainText("Outputs:")
         self.DecodedText.setPlainText("Decoded Text")
+        self.progressBar.setValue(0)
+
     def select_text(self):
         options = QtWidgets.QFileDialog.Options()
         options |= QtWidgets.QFileDialog.DontUseNativeDialog
-        file_name, _ = QtWidgets.QFileDialog.getOpenFileName(None, "Select Text File", "", "Text Files (*.txt);;All Files (*)", options=options)
+        file_name, _ = QtWidgets.QFileDialog.getOpenFileName(None, "Select Text File", "",
+                                                             "Text Files (*.txt);;All Files (*)", options=options)
         if file_name:
             with open(file_name, 'r') as file:
                 self.text = file.read()
@@ -485,6 +504,7 @@ class Ui_SaveDecode(object):
         QtWidgets.QApplication.processEvents(QtCore.QEventLoop.ExcludeUserInputEvents)
 
     def select_image_for_encoding(self):
+        self.progressBar.setValue(0)
         options = QtWidgets.QFileDialog.Options()
         options |= QtWidgets.QFileDialog.DontUseNativeDialog
         file_name, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -499,13 +519,19 @@ class Ui_SaveDecode(object):
             # Scale the image to fit within the QGraphicsView dimensions
             pixmap = self.get_scaled_pixmap(file_name, self.EncPhoto.width(), self.EncPhoto.height())
 
-
             self.EncPhoto.setScene(QtWidgets.QGraphicsScene())
             self.EncPhoto.scene().addPixmap(pixmap)
             self.update_terminal_output(f"Selected Photo: {file_name}")
             self.update_terminal_output(f"Image is selected please proceed with encoding")
 
+
+
+    def get_scaled_pixmap(self, file_name, width, height):
+        original_pixmap = QtGui.QPixmap(file_name)
+        return original_pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatio)
+
     def select_image_for_decoding(self):
+        self.progressBar.setValue(0)
         options = QtWidgets.QFileDialog.Options()
         options |= QtWidgets.QFileDialog.DontUseNativeDialog
         file_name, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -521,12 +547,9 @@ class Ui_SaveDecode(object):
             self.DecPhoto.scene().addPixmap(pixmap)
             self.update_terminal_output(f"Selected Photo: {file_name}")
             self.update_terminal_output(f"Image is selected please proceed with decoding")
-    def get_scaled_pixmap(self, file_name, width, height):
-        original_pixmap = QtGui.QPixmap(file_name)
-        return original_pixmap.scaled(width, height, QtCore.Qt.KeepAspectRatio)
-
     def decode_image(self):
         if self.img:
+
             self.timer_start = time.time()
             decoded_message = self.decode_LSB(self.img, "L$B")
             self.DecodedText.setPlainText(f"Decoded Text: {decoded_message}")
@@ -534,47 +557,11 @@ class Ui_SaveDecode(object):
             elapsed_time = time.time() - self.timer_start
             self.update_terminal_output(f"Decoding Time: {elapsed_time:.2f} seconds")
 
-    def encode_text_helper(self, remaining_text, counter):
-        self.img, has_remaining_text, binary_index = self.calculate_LSB(self.img, remaining_text)
-        print(has_remaining_text, binary_index)
-        if self.last_selected_image:
-            last_selected_pixmap = self.get_scaled_pixmap(
-                self.last_selected_image, self.EncodedPhoto.width(), self.EncodedPhoto.height()
-            )
-            self.EncodedPhoto.setScene(QtWidgets.QGraphicsScene())
-            self.EncodedPhoto.scene().addPixmap(last_selected_pixmap)
+            # Update progress bar to indicate completion
+            self.progressBar.setValue(100)
 
-        # Extract the ASCII characters from the remaining text
-        remaining_ascii_text = ""
-        while binary_index < len(remaining_text):
-            current_byte = remaining_text[binary_index:binary_index + 8]
-            remaining_ascii_text += chr(int(current_byte, 2))
-            binary_index += 8
-        self.update_terminal_output(f"Remaining Text: {remaining_ascii_text}")
-        self.update_terminal_output(f"Binary Index: {binary_index}")
-        # Display the last selected image on encoding
-        if self.last_selected_image:
-            last_selected_pixmap = self.get_scaled_pixmap(
-                self.last_selected_image, self.EncPhoto.width(), self.EncPhoto.height()
-            )
-            self.EncPhoto.setScene(QtWidgets.QGraphicsScene())
-            self.EncPhoto.scene().addPixmap(last_selected_pixmap)
-        # Ask the user to input the name for the encoded image
-        options = QtWidgets.QFileDialog.Options()
-        options |= QtWidgets.QFileDialog.DontUseNativeDialog
-        filename, _ = QtWidgets.QFileDialog.getSaveFileName(None, f"Save Encoded Image {counter}", "",
-                                                            "Image Files (*.png);;All Files (*)", options=options)
-
-
-        if filename:
-            self.save_stego_image(self.img, filename)
-        elapsed_time = time.time() - self.timer_start
-        self.update_terminal_output(f"Decoding Time: {elapsed_time:.2f} seconds")
-        return filename,has_remaining_text, remaining_text[binary_index:] if has_remaining_text else ""
-
-    def encode_text(self,filename):
+    def encode_text(self, filename):
         if self.img and self.text:
-            self.timer_start = time.time()
             text_to_encode = self.text + "L$B"
             binary_text = ''.join(format(ord(char), '08b') for char in text_to_encode)
 
@@ -582,13 +569,24 @@ class Ui_SaveDecode(object):
             options = QtWidgets.QFileDialog.Options()
             options |= QtWidgets.QFileDialog.DontUseNativeDialog
 
+            total_iterations = len(binary_text)
+            current_iteration = 0
+
             while binary_text:
+                self.timer_start = time.time()
                 self.img, binary_index = self.calculate_LSB(self.img, binary_text)
                 self.update_terminal_output(f"Step {counter} Encoding in Progress...")
-                elapsed_time = time.time() - self.timer_start
-                self.update_terminal_output(f"Encoding Time: {elapsed_time:.2f} seconds")
+                self.loss_time = time.time()
                 # Save the stego image
                 self.save_stego_image(self.img, filename)
+                loss_time_a = time.time() - self.loss_time
+                elapsed_time = time.time() - self.timer_start
+                elapsed_time = elapsed_time - loss_time_a
+                self.update_terminal_output(f"Encoding Time: {elapsed_time:.2f} seconds")
+                # Update progress bar
+                current_iteration += binary_index
+                progress_value = int((current_iteration / total_iterations) * 100)
+                self.progressBar.setValue(progress_value)
 
                 # Update the EncodedPhoto with the current stego image
                 self.update_encoded_photo(filename)
@@ -597,14 +595,16 @@ class Ui_SaveDecode(object):
                 counter += 1
 
                 if binary_text and counter > 1:
-
+                    loss_time_a = time.time() - self.loss_time
                     img_path, _ = QtWidgets.QFileDialog.getOpenFileName(
-                        None, "Select Another Image for Encoding", "", "Image Files (*.png *.jpg *.bmp);;All Files (*) a",
+                        None, "Select Another Image for Encoding", "",
+                        "Image Files (*.png *.jpg *.bmp);;All Files (*) a",
                         options=options)
                     if img_path:
                         self.img = Image.open(img_path)
                     else:
-                        self.update_terminal_output(f"Something Went wrong")
+                        self.update_terminal_output(f"Process has been stopped by the user ")
+                        self.progressBar.setValue(0)
                         break
 
                     if binary_text:
@@ -621,8 +621,6 @@ class Ui_SaveDecode(object):
                         f"Image was not enough. Please select a new image to continue from remaining.")
                 else:
                     self.update_terminal_output(f"Encoding Completed")
-
-
 
                 # Allow the GUI to update
                 QtWidgets.QApplication.processEvents(QtCore.QEventLoop.ExcludeUserInputEvents)
@@ -642,7 +640,8 @@ class Ui_SaveDecode(object):
         if decoded_text:
             options = QtWidgets.QFileDialog.Options()
             options |= QtWidgets.QFileDialog.DontUseNativeDialog
-            file_name, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Save Decoded Text", "", "Text Files (*.txt);;All Files (*)", options=options)
+            file_name, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Save Decoded Text", "",
+                                                                 "Text Files (*.txt);;All Files (*)", options=options)
             if file_name:
                 with open(file_name, 'w') as file:
                     file.write(decoded_text)
@@ -655,11 +654,20 @@ class Ui_SaveDecode(object):
         current_binary = ""
         key_txt = ''.join(format(ord(char), '08b') for char in key)
 
+        total_iterations = width * height * 3
+        current_iteration = 0
+
         for y in range(height):
             for x in range(width):
                 pixel = list(image.getpixel((x, y))[:3])
                 for c in range(3):
                     current_binary += str(pixel[c] & 1)
+                    current_iteration += 1
+
+                    # Update progress bar
+                    progress_value = int((current_iteration / total_iterations) * 100)
+                    self.progressBar.setValue(progress_value)
+
                     if len(current_binary) == 8:
                         binary_text += current_binary
                         if binary_text.endswith(key_txt):
@@ -676,7 +684,6 @@ class Ui_SaveDecode(object):
         )
 
         decoded_message = decoded_message.replace(key, "")
-
         return decoded_message
 
     def calculate_LSB(self, image, binary_text):
@@ -689,7 +696,8 @@ class Ui_SaveDecode(object):
         max_characters = total_bits // 8
 
         if len(binary_text) > total_bits:
-            self.update_terminal_output(f"Warning: Text may not be fully hidden in the image. It exceeds the image capacity.")
+            self.update_terminal_output(
+                f"Warning: Text may not be fully hidden in the image. It exceeds the image capacity.")
         binary_index = 0
         for y in range(height):
             for x in range(width):
@@ -705,7 +713,7 @@ class Ui_SaveDecode(object):
 
         return image, binary_index
 
-    def save_stego_image(self,image, filename):
+    def save_stego_image(self, image, filename):
         if self.img:
             # Ask the user to enter a custom name for the encoded image
             options = QtWidgets.QFileDialog.Options()
@@ -717,13 +725,16 @@ class Ui_SaveDecode(object):
                 try:
                     self.img.save(filename)
                     self.update_terminal_output(f"Stego image saved as {filename}")
+                    print(f"Encoding Completed flag set to: {self.encoding_completed}")
 
                 except Exception as e:
+                    self.update_terminal_output(f"Error: {e}")
+                    self.update_terminal_output(f"An error occurred while trying to save the stego image.")
+                    print(f"Error saving stego image: {e}")
 
-                    self.update_terminal_output(
-                        f"Error: {e}")
-                    self.update_terminal_output(
-                        f"An error occurred while trying to save the stego image.")
+            else:
+                self.update_terminal_output("Saving process has been stopped by the user")
+                print(f"Encoding Completed flag reset to: {self.encoding_completed}")
 
 if __name__ == "__main__":
     import sys
