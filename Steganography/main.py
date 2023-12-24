@@ -614,7 +614,8 @@ class Ui_SaveDecode(object):
                 chunk_size = 8
                 chunks = [binary_text[i:i + chunk_size] for i in range(binary_index, len(binary_text), chunk_size)]
                 ascii_text = "".join(chr(int(chunk, 2)) for chunk in chunks)
-                self.update_terminal_output(f"Remaining Text: {ascii_text}")
+                filtered_ascii_text = ascii_text.replace("L$B", "")
+                self.update_terminal_output(f"Remaining Text: {filtered_ascii_text}")
                 self.update_terminal_output(f"Binary Index: {binary_index}")
                 if binary_text:
                     self.update_terminal_output(
@@ -643,6 +644,10 @@ class Ui_SaveDecode(object):
             file_name, _ = QtWidgets.QFileDialog.getSaveFileName(None, "Save Decoded Text", "",
                                                                  "Text Files (*.txt);;All Files (*)", options=options)
             if file_name:
+                # Eğer dosya adı ".txt" ile bitmiyorsa, uzantıyı ekle
+                if not file_name.lower().endswith(".txt"):
+                    file_name += ".txt"
+                    
                 with open(file_name, 'w') as file:
                     file.write(decoded_text)
                     self.update_terminal_output(f"Selected Photo: {file_name}")
@@ -723,6 +728,10 @@ class Ui_SaveDecode(object):
 
             if filename:
                 try:
+                    # Uzantı kontrolü yap
+                    if not filename.lower().endswith(".png"):
+                        filename += ".png"
+
                     self.img.save(filename)
                     self.update_terminal_output(f"Stego image saved as {filename}")
                     print(f"Encoding Completed flag set to: {self.encoding_completed}")
